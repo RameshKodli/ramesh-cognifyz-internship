@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Task 6 - Auth + Database</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 2rem; }
+  .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 2rem; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+  input { width: 100%; padding: 0.6rem; margin: 0.3rem 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+  button { padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer; margin-top: 0.5rem; margin-right: 0.5rem; }
+  .primary { background: #2c7be5; color: #fff; }
+  .danger { background: #e74c3c; color: #fff; }
+  #status { margin-top: 1rem; font-size: 0.9rem; }
+  #app-section { display: none; }
+  li { display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid #eee; list-style: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Task 6: Auth + MongoDB</h1>
+
+  <div id="auth-section">
+    <h3>Register</h3>
+    <input id="regUsername" placeholder="Username">
+    <input id="regEmail" placeholder="Email">
+    <input id="regPassword" type="password" placeholder="Password">
+    <button class="primary" onclick="register()">Register</button>
+
+    <h3>Login</h3>
+    <input id="loginEmail" placeholder="Email">
+    <input id="loginPassword" type="password" placeholder="Password">
+    <button class="primary" onclick="login()">Login</button>
+
+    <p id="status"></p>
+  </div>
+
+  <div id="app-section">
+    <p>Logged in as <strong id="whoami"></strong> <button class="danger" onclick="logout()">Logout</button></p>
+    <input id="itemTitle" placeholder="New item title">
+    <button class="primary" onclick="addItem()">Add Item</button>
+    <ul id="itemList"></ul>
+  </div>
+</div>
+
+<script>
+  let token = localStorage.getItem('token');
+  let currentUser = localStorage.getItem('username');
+
+  function showApp() {
+    document.getElementById('auth-section').style.display = 'none';
+    document.getElementById('app-section').style.display = 'block';
+    document.getElementById('whoami').textContent = currentUser;
+    loadItems();
+  }
+
+  if (token) showApp();
+
+  async function register() {
+    const username = document.getElementById('regUsername').value;
+    const email = document.getElementById('regEmail').value;
+    const password = document.getElementById('regPassword').value;
+
+    const res = await fetch('/api/auth/register', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password })
+    });
+    const data = await res.json();
+    document.getElementById('status').textContent = data.message || data.error;
+
+    if (res.ok) {
+      token = data.token;
+      currentUser = data.user.username;
+      localStorage.setItem('token', token);
+      localStorage.setItem('username', currentUser);
+      showApp();
+    }
+  }
+
+  async function login() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+
+    const res = await fetch('/api/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    document.getElementById('status').textContent = data.message || data.error;
+
+    if (res.ok) {
+      token = data.token;
+      currentUser = data.user.username;
+      localStorage.setItem('token', token);
+      localStorage.setItem('username', currentUser);
+      showApp();
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    location.reload();
+  }
+
+  async function loadItems() {
+    const res = await fetch('/api/items', { headers: { Authorization: 'Bearer ' + token } });
+    const items = await res.json();
+    const list = document.getElementById('itemList');
+    list.innerHTML = '';
+    (items || []).forEach(item => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span>${item.title}</span><button class="danger" onclick="deleteItem('${item._id}')">Delete</button>`;
+      list.appendChild(li);
+    });
+  }
+
+  async function addItem() {
+    const title = document.getElementById('itemTitle').value.trim();
+    if (!title) return;
+    await fetch('/api/items', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ title })
+    });
+    document.getElementById('itemTitle').value = '';
+    loadItems();
+  }
+
+  async function deleteItem(id) {
+    await fetch('/api/items/' + id, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
+    loadItems();
+  }
+</script>
+</body>
+</html>

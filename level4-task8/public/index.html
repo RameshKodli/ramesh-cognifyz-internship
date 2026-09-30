@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Task 8 - Middleware, Jobs & Caching</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 2rem; }
+  .container { max-width: 550px; margin: 0 auto; background: #fff; padding: 2rem; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+  button { padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer; background: #2c7be5; color: #fff; margin: 0.3rem 0.3rem 0.3rem 0; }
+  pre { background: #1c1f26; color: #a5d6a7; padding: 1rem; border-radius: 8px; overflow-x: auto; white-space: pre-wrap; }
+  h2 { margin-top: 2rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Task 8: Server-Side Functionality</h1>
+
+  <h2>Background Job</h2>
+  <button onclick="queueJob()">Queue "send-email" Job</button>
+  <button onclick="checkJob()">Check Job Status</button>
+  <pre id="jobOutput">No job yet.</pre>
+
+  <h2>Cached Endpoint</h2>
+  <p>Fetch twice quickly and note the <code>X-Cache</code> header switches from MISS to HIT.</p>
+  <button onclick="fetchExpensive()">Fetch Expensive Data</button>
+  <button onclick="clearCache()">Clear Cache</button>
+  <pre id="cacheOutput">No data fetched yet.</pre>
+</div>
+
+<script>
+  let lastJobId = null;
+
+  async function queueJob() {
+    const res = await fetch('/api/jobs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'send-email', payload: { to: 'user@example.com' } })
+    });
+    const data = await res.json();
+    lastJobId = data.job.id;
+    document.getElementById('jobOutput').textContent = JSON.stringify(data, null, 2);
+  }
+
+  async function checkJob() {
+    if (!lastJobId) {
+      document.getElementById('jobOutput').textContent = 'Queue a job first.';
+      return;
+    }
+    const res = await fetch('/api/jobs/' + lastJobId);
+    const data = await res.json();
+    document.getElementById('jobOutput').textContent = JSON.stringify(data, null, 2);
+  }
+
+  async function fetchExpensive() {
+    const start = Date.now();
+    const res = await fetch('/api/expensive-data');
+    const data = await res.json();
+    const cacheStatus = res.headers.get('X-Cache');
+    const elapsed = Date.now() - start;
+    document.getElementById('cacheOutput').textContent =
+      `X-Cache: ${cacheStatus} | took ${elapsed}ms\n\n` + JSON.stringify(data, null, 2);
+  }
+
+  async function clearCache() {
+    await fetch('/api/cache/clear', { method: 'POST' });
+    document.getElementById('cacheOutput').textContent = 'Cache cleared.';
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "name": "level2-task3-responsive-design",
+  "version": "1.0.0",
+  "description": "Task 3: Advanced CSS Styling and Responsive Design",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": { "express": "^4.19.2" }
+}

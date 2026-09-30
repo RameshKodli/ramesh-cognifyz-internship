@@ -1,0 +1,14 @@
+{
+  "name": "level1-task2-validation",
+  "version": "1.0.0",
+  "description": "Task 2: Inline Styles, Basic Interaction, and Server-Side Validation",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "body-parser": "^1.20.2"
+  }
+}

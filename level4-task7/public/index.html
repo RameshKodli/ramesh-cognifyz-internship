@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Task 7 - External API + OAuth</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 2rem; }
+  .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 2rem; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+  input, button { padding: 0.6rem; margin: 0.3rem 0; border-radius: 6px; border: 1px solid #ccc; }
+  button { background: #2c7be5; color: #fff; border: none; cursor: pointer; }
+  pre { background: #1c1f26; color: #a5d6a7; padding: 1rem; border-radius: 8px; overflow-x: auto; }
+  img { border-radius: 50%; width: 80px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Task 7: OAuth + External API</h1>
+  <p>1. Get a demo access token, then 2. look up a GitHub user through our server (which enforces the token + rate limiting).</p>
+
+  <button onclick="getToken()">1. Get Access Token</button>
+  <p id="tokenStatus"></p>
+
+  <input id="ghUsername" placeholder="GitHub username (e.g. octocat)" value="octocat">
+  <button onclick="lookupUser()">2. Look Up User</button>
+
+  <div id="result"></div>
+</div>
+
+<script>
+  let token = null;
+
+  async function getToken() {
+    // Demo client credentials - matches .env defaults
+    const res = await fetch('/oauth/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: 'demo_client_id',
+        client_secret: 'demo_client_secret',
+        grant_type: 'client_credentials'
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      token = data.access_token;
+      document.getElementById('tokenStatus').textContent = 'Token acquired, expires in ' + data.expires_in + 's.';
+    } else {
+      document.getElementById('tokenStatus').textContent = 'Error: ' + data.error;
+    }
+  }
+
+  async function lookupUser() {
+    const username = document.getElementById('ghUsername').value.trim();
+    const resultDiv = document.getElementById('result');
+
+    if (!token) {
+      resultDiv.innerHTML = '<p style="color:red">Get a token first.</p>';
+      return;
+    }
+
+    const res = await fetch('/api/github/' + username, {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+      return;
+    }
+
+    resultDiv.innerHTML = `
+      <img src="${data.avatarUrl}">
+      <h3>${data.name || data.login}</h3>
+      <p>Public repos: ${data.publicRepos} | Followers: ${data.followers}</p>
+      <a href="${data.profileUrl}" target="_blank">View Profile</a>
+    `;
+  }
+</script>
+</body>
+</html>

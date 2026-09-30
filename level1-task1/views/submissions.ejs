@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>All Submissions</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>All Submissions</h1>
+    <a href="/">&larr; Back to form</a>
+
+    <% if (submissions.length === 0) { %>
+      <p>No submissions yet.</p>
+    <% } else { %>
+      <table>
+        <thead>
+          <tr><th>#</th><th>Name</th><th>Email</th><th>Message</th><th>Time</th></tr>
+        </thead>
+        <tbody>
+          <% submissions.forEach(s => { %>
+            <tr>
+              <td><%= s.id %></td>
+              <td><%= s.name %></td>
+              <td><%= s.email %></td>
+              <td><%= s.message %></td>
+              <td><%= s.submittedAt %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+</body>
+</html>

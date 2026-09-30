@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Task 2 - Validation</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 2rem; }
+  .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 2rem; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+  h1 { color: #2c3e50; margin-top: 0; }
+  form { display: flex; flex-direction: column; gap: 0.4rem; }
+  label { font-weight: bold; margin-top: 0.6rem; }
+  input { padding: 0.6rem; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
+  input.invalid { border-color: #e74c3c; background: #fdecea; }
+  .error-text { color: #e74c3c; font-size: 0.85rem; min-height: 1.1rem; }
+  button { margin-top: 1rem; padding: 0.7rem; background: #2c7be5; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; }
+  button:hover { background: #1a5fc4; }
+  #serverResult { margin-top: 1rem; padding: 1rem; border-radius: 6px; display: none; }
+  #serverResult.success { background: #e8f6ee; border-left: 4px solid #2ecc71; display: block; }
+  #serverResult.failure { background: #fdecea; border-left: 4px solid #e74c3c; display: block; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Sign Up (Client + Server Validation)</h1>
+
+  <form id="signupForm" novalidate>
+    <label for="username">Username</label>
+    <input type="text" id="username" name="username">
+    <div class="error-text" id="usernameError"></div>
+
+    <label for="email">Email</label>
+    <input type="email" id="email" name="email">
+    <div class="error-text" id="emailError"></div>
+
+    <label for="age">Age</label>
+    <input type="number" id="age" name="age">
+    <div class="error-text" id="ageError"></div>
+
+    <label for="password">Password</label>
+    <input type="password" id="password" name="password">
+    <div class="error-text" id="passwordError"></div>
+
+    <button type="submit">Sign Up</button>
+  </form>
+
+  <div id="serverResult"></div>
+</div>
+
+<!-- Inline JavaScript for client-side validation -->
+<script>
+  const form = document.getElementById('signupForm');
+  const resultBox = document.getElementById('serverResult');
+
+  function setError(fieldId, errorId, message) {
+    const field = document.getElementById(fieldId);
+    const errEl = document.getElementById(errorId);
+    if (message) {
+      field.classList.add('invalid');
+      errEl.textContent = message;
+    } else {
+      field.classList.remove('invalid');
+      errEl.textContent = '';
+    }
+  }
+
+  function clientValidate() {
+    let valid = true;
+
+    const username = document.getElementById('username').value.trim();
+    if (username.length < 3) {
+      setError('username', 'usernameError', 'Username must be at least 3 characters.');
+      valid = false;
+    } else {
+      setError('username', 'usernameError', '');
+    }
+
+    const email = document.getElementById('email').value.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('email', 'emailError', 'Enter a valid email address.');
+      valid = false;
+    } else {
+      setError('email', 'emailError', '');
+    }
+
+    const age = Number(document.getElementById('age').value);
+    if (!age || age < 13 || age > 120) {
+      setError('age', 'ageError', 'Age must be between 13 and 120.');
+      valid = false;
+    } else {
+      setError('age', 'ageError', '');
+    }
+
+    const password = document.getElementById('password').value;
+    if (password.length < 6) {
+      setError('password', 'passwordError', 'Password must be at least 6 characters.');
+      valid = false;
+    } else {
+      setError('password', 'passwordError', '');
+    }
+
+    return valid;
+  }
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    resultBox.className = '';
+    resultBox.textContent = '';
+
+    if (!clientValidate()) {
+      return; // stop here if client-side validation fails
+    }
+
+    const payload = {
+      username: document.getElementById('username').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      age: document.getElementById('age').value,
+      password: document.getElementById('password').value
+    };
+
+    try {
+      const res = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        resultBox.className = 'success';
+        resultBox.textContent = 'Success: ' + data.message;
+        form.reset();
+      } else {
+        resultBox.className = 'failure';
+        resultBox.textContent = 'Server validation failed: ' + data.errors.join(' ');
+      }
+    } catch (err) {
+      resultBox.className = 'failure';
+      resultBox.textContent = 'Network error: ' + err.message;
+    }
+  });
+</script>
+</body>
+</html>

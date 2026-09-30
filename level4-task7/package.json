@@ -1,0 +1,13 @@
+{
+  "name": "level4-task7-external-api",
+  "version": "1.0.0",
+  "description": "Task 7: Advanced API Usage and External API Integration",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": {
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "node-fetch": "^2.7.0",
+    "dotenv": "^16.4.5"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "level2-task4-dynamic-dom",
+  "version": "1.0.0",
+  "description": "Task 4: Complex Form Validation and Dynamic DOM Manipulation",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": { "express": "^4.19.2" }
+}

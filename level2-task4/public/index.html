@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Task 4 - Dynamic DOM & Client Routing</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 0; background: #f4f6f8; }
+  nav { background: #1c1f26; padding: 1rem; display: flex; gap: 1.5rem; }
+  nav a { color: #fff; text-decoration: none; cursor: pointer; font-weight: bold; }
+  nav a.active { color: #4dabf7; }
+  .container { max-width: 600px; margin: 2rem auto; background: #fff; padding: 2rem; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+  input { width: 100%; padding: 0.6rem; margin: 0.4rem 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+  .strength-bar { height: 8px; border-radius: 4px; background: #eee; margin-top: 0.3rem; overflow: hidden; }
+  .strength-fill { height: 100%; width: 0%; transition: width 0.3s ease, background 0.3s ease; }
+  .task-item { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem; border-bottom: 1px solid #eee; }
+  .task-item button { background: #e74c3c; color: #fff; border: none; border-radius: 4px; padding: 0.3rem 0.6rem; cursor: pointer; }
+  button.add-btn { background: #2c7be5; color: #fff; border: none; padding: 0.6rem 1rem; border-radius: 6px; cursor: pointer; margin-top: 0.5rem; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#/" data-route="/">Home</a>
+  <a href="#/tasks" data-route="/tasks">Dynamic Tasks</a>
+  <a href="#/password" data-route="/password">Password Check</a>
+</nav>
+
+<div id="app" class="container"></div>
+
+<script>
+  /* ---------- Simple hash-based client-side router ---------- */
+  const routes = {
+    '/': renderHome,
+    '/tasks': renderTasks,
+    '/password': renderPassword
+  };
+
+  function router() {
+    const path = location.hash.replace('#', '') || '/';
+    const renderFn = routes[path] || renderNotFound;
+    document.querySelectorAll('nav a').forEach(a => {
+      a.classList.toggle('active', a.dataset.route === path);
+    });
+    renderFn();
+  }
+
+  window.addEventListener('hashchange', router);
+  window.addEventListener('load', router);
+
+  const app = document.getElementById('app');
+
+  function renderHome() {
+    app.innerHTML = `
+      <h1>Task 4: Complex Validation & DOM Manipulation</h1>
+      <p>Use the nav above to try:</p>
+      <ul>
+        <li><strong>Dynamic Tasks</strong> - add/remove items, DOM updates live.</li>
+        <li><strong>Password Check</strong> - real-time password strength validation.</li>
+      </ul>
+    `;
+  }
+
+  function renderNotFound() {
+    app.innerHTML = '<h2>404 - Page not found</h2>';
+  }
+
+  /* ---------- Dynamic DOM manipulation demo ---------- */
+  let tasks = ['Learn Express', 'Build REST API'];
+
+  function renderTasks() {
+    app.innerHTML = `
+      <h2>Dynamic Task List</h2>
+      <input type="text" id="newTask" placeholder="New task...">
+      <button class="add-btn" id="addTaskBtn">Add Task</button>
+      <div id="taskList"></div>
+    `;
+    drawTaskList();
+    document.getElementById('addTaskBtn').addEventListener('click', addTask);
+    document.getElementById('newTask').addEventListener('keydown', e => {
+      if (e.key === 'Enter') addTask();
+    });
+  }
+
+  function drawTaskList() {
+    const listEl = document.getElementById('taskList');
+    listEl.innerHTML = '';
+    tasks.forEach((t, i) => {
+      const div = document.createElement('div');
+      div.className = 'task-item';
+      div.innerHTML = `<span>${t}</span>`;
+      const btn = document.createElement('button');
+      btn.textContent = 'Remove';
+      btn.addEventListener('click', () => {
+        tasks.splice(i, 1); // dynamically update state
+        drawTaskList();     // dynamically update DOM
+      });
+      div.appendChild(btn);
+      listEl.appendChild(div);
+    });
+  }
+
+  function addTask() {
+    const input = document.getElementById('newTask');
+    const val = input.value.trim();
+    if (val) {
+      tasks.push(val);
+      input.value = '';
+      drawTaskList();
+    }
+  }
+
+  /* ---------- Complex form validation: password strength ---------- */
+  function renderPassword() {
+    app.innerHTML = `
+      <h2>Password Strength Validator</h2>
+      <input type="password" id="pw" placeholder="Enter a password">
+      <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+      <p id="strengthLabel"></p>
+      <ul id="rules">
+        <li id="ruleLength">At least 8 characters</li>
+        <li id="ruleUpper">At least one uppercase letter</li>
+        <li id="ruleNumber">At least one number</li>
+        <li id="ruleSpecial">At least one special character</li>
+      </ul>
+    `;
+    const pw = document.getElementById('pw');
+    pw.addEventListener('input', () => checkStrength(pw.value));
+  }
+
+  function checkStrength(value) {
+    const rules = {
+      ruleLength: value.length >= 8,
+      ruleUpper: /[A-Z]/.test(value),
+      ruleNumber: /[0-9]/.test(value),
+      ruleSpecial: /[^A-Za-z0-9]/.test(value)
+    };
+
+    let score = 0;
+    Object.entries(rules).forEach(([id, passed]) => {
+      const el = document.getElementById(id);
+      el.style.color = passed ? '#2ecc71' : '#999';
+      el.style.textDecoration = passed ? 'line-through' : 'none';
+      if (passed) score++;
+    });
+
+    const fill = document.getElementById('strengthFill');
+    const label = document.getElementById('strengthLabel');
+    const pct = (score / 4) * 100;
+    fill.style.width = pct + '%';
+
+    if (score <= 1) { fill.style.background = '#e74c3c'; label.textContent = 'Weak'; }
+    else if (score <= 3) { fill.style.background = '#f39c12'; label.textContent = 'Medium'; }
+    else { fill.style.background = '#2ecc71'; label.textContent = 'Strong'; }
+  }
+</script>
+</body>
+</html>
